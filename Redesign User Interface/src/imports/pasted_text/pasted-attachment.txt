@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creator Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-primary: #F9FAFB; /* Light gray background */
+            --bg-card: #FFFFFF; /* White cards */
+            --text-primary: #111827; /* Dark text */
+            --text-secondary: #6B7280; /* Gray text */
+            --border-color: #E5E7EB; /* Light borders */
+            --gold: #D4AF37; /* Standard Gold */
+            --gold-hover: #C19B2C;
+            --gold-soft: rgba(212, 175, 55, 0.1); /* Soft gold background */
+            --red: #EF4444;
+            --green: #10B981;
+        }
+        html.dark {
+            --bg-primary: #000000; /* True black */
+            --bg-card: #161616; /* Dark gray cards */
+            --text-primary: #FFFFFF; /* White text */
+            --text-secondary: #9CA3AF; /* Light gray text */
+            --border-color: #2D2D2D; /* Dark borders */
+            --gold: #D4AF37;
+            --gold-hover: #E5C158;
+            --gold-soft: rgba(212, 175, 55, 0.15);
+            --red: #EF4444;
+            --green: #10B981;
+        }
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .text-secondary { color: var(--text-secondary); }
+        .text-gold { color: var(--gold); }
+        .bg-gold-soft { background-color: var(--gold-soft); }
+        .border-themed { border-color: var(--border-color); }
+        .border-gold { border-color: var(--gold); }
+        
+        .btn-gold {
+            background-color: var(--gold);
+            color: #000;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-gold:hover { background-color: var(--gold-hover); }
+        
+        /* Bottom Nav */
+        .bottom-nav {
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+        }
+        .nav-item.active { color: var(--gold); }
+        .nav-item.active svg { stroke-width: 2.5; }
+        
+        /* Toggle Switch */
+        .toggle-bg { background-color: var(--border-color); }
+        .toggle-bg.active { background-color: var(--gold); }
+        .toggle-dot { transition: transform 0.3s ease; }
+        .toggle-dot.active { transform: translateX(24px); }
+        
+        /* Canvas Container Fix */
+        .chart-container {
+            position: relative;
+            height: 200px;
+            width: 100%;
+        }
+        .chart-container-small {
+            position: relative;
+            height: 160px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-24">
+
+    <div class="max-w-md mx-auto relative">
+        
+        <!-- Top Header -->
+        <header class="flex justify-between items-center p-5 sticky top-0 z-40 card border-b border-themed">
+            <div>
+                <p class="text-sm text-secondary">Welcome back,</p>
+                <h1 class="text-xl font-bold">Creator Name</h1>
+            </div>
+            <button id="theme-toggle" class="p-2.5 rounded-full card border border-themed">
+                <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
+            </button>
+        </header>
+
+        <main class="p-4 space-y-6">
+            
+            <!-- ============ OVERVIEW DASHBOARD ============ -->
+            <div id="view-overview" class="space-y-6">
+                
+                <!-- 1. Availability & Generic Number -->
+                <div class="card rounded-2xl p-5 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <p class="text-xs text-secondary uppercase tracking-wider">Availability</p>
+                            <p id="status-text" class="text-lg font-bold text-secondary">Offline</p>
+                        </div>
+                        <div id="availability-toggle" class="w-14 h-7 rounded-full toggle-bg flex items-center px-1 cursor-pointer">
+                            <div class="toggle-dot w-5 h-5 bg-white rounded-full shadow-md"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-themed pt-4 mt-4">
+                        <p class="text-xs text-secondary uppercase tracking-wider mb-2">Your Generic Number</p>
+                        <div class="flex justify-between items-center p-3 rounded-lg bg-gold-soft">
+                            <span id="generic-number" class="text-lg font-bold text-gold tracking-wider">+1 (555) 867-5309</span>
+                            <button id="copy-btn" class="flex items-center gap-1 text-xs btn-gold px-3 py-1.5 rounded-md">
+                                <i id="copy-icon" data-lucide="copy" class="w-3.5 h-3.5"></i> <span id="copy-text">Copy</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Quick Stats -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="card rounded-xl p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-secondary">Today</p>
+                            <i data-lucide="trending-up" class="w-4 h-4 text-green-500"></i>
+                        </div>
+                        <p class="text-2xl font-bold">$340</p>
+                        <p class="text-xs text-green-500 mt-1">+12% from yesterday</p>
+                    </div>
+                    <div class="card rounded-xl p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-secondary">This Week</p>
+                            <i data-lucide="calendar" class="w-4 h-4 text-secondary"></i>
+                        </div>
+                        <p class="text-2xl font-bold">$1,640</p>
+                        <p class="text-xs text-secondary mt-1">42 calls total</p>
+                    </div>
+                </div>
+
+                <!-- 3. Revenue Bar Chart -->
+                <div class="card rounded-2xl p-5 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold">Revenue Analytics</h2>
+                        <select class="text-xs bg-transparent border border-themed rounded-md px-2 py-1 text-secondary focus:outline-none">
+                            <option>This Week</option>
+                            <option>This Month</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 4. Call Breakdown Pie Chart -->
+                <div class="card rounded-2xl p-5 shadow-sm">
+                    <h2 class="text-lg font-bold mb-4">Call Breakdown</h2>
+                    <div class="flex justify-between items-center gap-4">
+                        <div class="chart-container-small w-40 h-40 relative">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                        <div class="flex-1 space-y-3 text-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full" style="background-color: var(--gold)"></span>
+                                <span class="text-secondary flex-1">Answered</span>
+                                <span class="font-bold">65%</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-gray-500"></span>
+                                <span class="text-secondary flex-1">Declined</span>
+                                <span class="font-bold">20%</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                <span class="text-secondary flex-1">Missed</span>
+                                <span class="font-bold">15%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Notifications -->
+                <div class="card rounded-2xl p-5 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold">Recent Activity</h2>
+                        <span class="text-xs text-gold font-semibold">View All</span>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 rounded-full bg-gold-soft">
+                                <i data-lucide="dollar-sign" class="w-4 h-4 text-gold"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold">Payment Received</p>
+                                <p class="text-xs text-secondary">Fan_9948 paid $20.00 for 5 mins.</p>
+                            </div>
+                            <span class="text-xs text-secondary">2m ago</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                                <i data-lucide="video" class="w-4 h-4 text-blue-500"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold">Video Switch Request</p>
+                                <p class="text-xs text-secondary">WebRTC link sent to +1 555...</p>
+                            </div>
+                            <span class="text-xs text-secondary">10m ago</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 rounded-full bg-red-100 dark:bg-red-900/30">
+                                <i data-lucide="phone-missed" class="w-4 h-4 text-red-500"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold">Missed Call</p>
+                                <p class="text-xs text-secondary">+1 555 998 1234 tried to call.</p>
+                            </div>
+                            <span class="text-xs text-secondary">1h ago</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. History (Calls & Withdrawals) -->
+                <div class="card rounded-2xl p-5 shadow-sm">
+                    <h2 class="text-lg font-bold mb-4">History</h2>
+                    
+                    <div class="flex border-b border-themed mb-4">
+                        <button id="tab-calls" class="tab-btn pb-2 px-4 border-b-2 text-gold border-gold font-semibold text-sm">Calls</button>
+                        <button id="tab-payouts" class="tab-btn pb-2 px-4 border-b-2 border-transparent text-secondary text-sm">Withdrawals</button>
+                    </div>
+
+                    <!-- Calls List -->
+                    <div id="list-calls" class="space-y-3">
+                        <div class="flex justify-between items-center pb-3 border-b border-themed">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="phone" class="w-4 h-4 text-green-500"></i>
+                                <div>
+                                    <p class="font-semibold text-sm">+1 555 882 1190</p>
+                                    <p class="text-xs text-secondary">Answered • 8 mins</p>
+                                </div>
+                            </div>
+                            <p class="font-bold text-gold text-sm">+$32.00</p>
+                        </div>
+                        <div class="flex justify-between items-center pb-3 border-b border-themed">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="phone-missed" class="w-4 h-4 text-red-500"></i>
+                                <div>
+                                    <p class="font-semibold text-sm">+1 555 441 0098</p>
+                                    <p class="text-xs text-secondary">Missed</p>
+                                </div>
+                            </div>
+                            <p class="font-bold text-secondary text-sm">$0.00</p>
+                        </div>
+                        <div class="flex justify-between items-center pb-3 border-b border-themed">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="phone" class="w-4 h-4 text-green-500"></i>
+                                <div>
+                                    <p class="font-semibold text-sm">+1 555 778 2200</p>
+                                    <p class="text-xs text-secondary">Answered • 15 mins</p>
+                                </div>
+                            </div>
+                            <p class="font-bold text-gold text-sm">+$60.00</p>
+                        </div>
+                    </div>
+
+                    <!-- Withdrawals List -->
+                    <div id="list-payouts" class="space-y-3 hidden">
+                        <div class="flex justify-between items-center pb-3 border-b border-themed">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="banknote" class="w-4 h-4 text-gold"></i>
+                                <div>
+                                    <p class="font-semibold text-sm">CCBill Payout</p>
+                                    <p class="text-xs text-secondary">Oct 1, 2023 • Processed</p>
+                                </div>
+                            </div>
+                            <p class="font-bold text-gold text-sm">$1,240.00</p>
+                        </div>
+                        <div class="flex justify-between items-center pb-3 border-b border-themed">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="banknote" class="w-4 h-4 text-gold"></i>
+                                <div>
+                                    <p class="font-semibold text-sm">CCBill Payout</p>
+                                    <p class="text-xs text-secondary">Sep 1, 2023 • Processed</p>
+                                </div>
+                            </div>
+                            <p class="font-bold text-gold text-sm">$980.00</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ============ PROFILE VIEW ============ -->
+            <div id="view-profile" class="space-y-6 hidden">
+                <!-- Profile Header -->
+                <div class="card rounded-2xl p-6 shadow-sm flex flex-col items-center text-center">
+                    <div class="w-20 h-20 rounded-full flex items-center justify-center mb-4" style="background-color: var(--gold);">
+                        <span class="text-3xl font-bold text-black">CN</span>
+                    </div>
+                    <h2 class="text-xl font-bold">Creator Name</h2>
+                    <p class="text-secondary text-sm">@creator_name</p>
+                    <div class="mt-4 flex space-x-8">
+                        <div class="text-center">
+                            <p id="rate-display-profile" class="text-lg font-bold text-gold">$4.00</p>
+                            <p class="text-xs text-secondary">Per Min</p>
+                        </div>
+                        <div class="w-px bg-themed border-l border-themed"></div>
+                        <div class="text-center">
+                            <p class="text-lg font-bold text-gold">$8,450</p>
+                            <p class="text-xs text-secondary">Total Earned</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rate Settings -->
+                <div class="card rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-secondary mb-4">Rate Settings</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="font-medium">Per Minute Rate</span>
+                        <div class="flex items-center gap-2">
+                            <button id="rate-minus" class="w-8 h-8 rounded-md border border-themed flex items-center justify-center text-secondary">-</button>
+                            <span id="rate-display" class="font-bold text-gold w-16 text-center">$4.00</span>
+                            <button id="rate-plus" class="w-8 h-8 rounded-md border border-themed flex items-center justify-center text-secondary">+</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">Minimum Deposit</span>
+                        <span class="font-bold text-gold">$10.00</span>
+                    </div>
+                </div>
+
+                <!-- Account Settings List -->
+                <div class="card rounded-2xl shadow-sm divide-y divide-themed border border-themed overflow-hidden">
+                    <div class="p-4 flex justify-between items-center cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="badge-check" class="w-5 h-5 text-gold"></i>
+                            <span class="font-medium">KYC Verification</span>
+                        </div>
+                        <span class="text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded">VERIFIED</span>
+                    </div>
+                    <div class="p-4 flex justify-between items-center cursor-pointer border-t border-themed">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="credit-card" class="w-5 h-5 text-gold"></i>
+                            <span class="font-medium">Payout Method</span>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-secondary"></i>
+                    </div>
+                    <div class="p-4 flex justify-between items-center cursor-pointer border-t border-themed">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="bell" class="w-5 h-5 text-gold"></i>
+                            <span class="font-medium">Notifications</span>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-secondary"></i>
+                    </div>
+                    <div class="p-4 flex justify-between items-center cursor-pointer border-t border-themed">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="shield" class="w-5 h-5 text-gold"></i>
+                            <span class="font-medium">Privacy & Security</span>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-secondary"></i>
+                    </div>
+                    <div class="p-4 flex justify-between items-center cursor-pointer border-t border-themed">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="log-out" class="w-5 h-5 text-red-500"></i>
+                            <span class="font-medium text-red-500">Log Out</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav fixed bottom-0 left-0 right-0 max-w-md mx-auto flex justify-around py-3 z-50 border-t border-themed">
+            <button id="nav-overview" class="nav-item active flex flex-col items-center gap-1 text-xs font-medium">
+                <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+                Overview
+            </button>
+            <button id="nav-profile" class="nav-item flex flex-col items-center gap-1 text-xs font-medium text-secondary">
+                <i data-lucide="user" class="w-6 h-6"></i>
+                Profile
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // --- Theme Toggling ---
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        // Apply saved theme on load
+        if (localStorage.getItem('theme') === 'dark') {
+            html.classList.add('dark');
+            themeIcon.setAttribute('data-lucide', 'sun');
+        } else {
+            themeIcon.setAttribute('data-lucide', 'moon');
+        }
+        lucide.createIcons();
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            if (html.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+                themeIcon.setAttribute('data-lucide', 'sun');
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeIcon.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+            renderCharts(); // Re-render charts to apply new theme colors
+        });
+
+        // --- Bottom Navigation ---
+        const navOverview = document.getElementById('nav-overview');
+        const navProfile = document.getElementById('nav-profile');
+        const viewOverview = document.getElementById('view-overview');
+        const viewProfile = document.getElementById('view-profile');
+
+        navOverview.addEventListener('click', () => {
+            viewOverview.classList.remove('hidden');
+            viewProfile.classList.add('hidden');
+            navOverview.classList.add('active', 'text-gold');
+            navOverview.classList.remove('text-secondary');
+            navProfile.classList.remove('active', 'text-gold');
+            navProfile.classList.add('text-secondary');
+        });
+
+        navProfile.addEventListener('click', () => {
+            viewProfile.classList.remove('hidden');
+            viewOverview.classList.add('hidden');
+            navProfile.classList.add('active', 'text-gold');
+            navProfile.classList.remove('text-secondary');
+            navOverview.classList.remove('active', 'text-gold');
+            navOverview.classList.add('text-secondary');
+        });
+
+        // --- Availability Toggle ---
+        const toggleSwitch = document.getElementById('availability-toggle');
+        const toggleDot = toggleSwitch.querySelector('.toggle-dot');
+        const statusText = document.getElementById('status-text');
+
+        toggleSwitch.addEventListener('click', () => {
+            toggleSwitch.classList.toggle('active');
+            toggleDot.classList.toggle('active');
+            if (toggleSwitch.classList.contains('active')) {
+                statusText.textContent = 'Online & Ready';
+                statusText.classList.add('text-gold');
+                statusText.classList.remove('text-secondary');
+            } else {
+                statusText.textContent = 'Offline';
+                statusText.classList.remove('text-gold');
+                statusText.classList.add('text-secondary');
+            }
+        });
+
+        // --- Copy to Clipboard ---
+        const copyBtn = document.getElementById('copy-btn');
+        const copyIcon = document.getElementById('copy-icon');
+        const copyText = document.getElementById('copy-text');
+        const genericNumber = document.getElementById('generic-number').innerText;
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(genericNumber).then(() => {
+                copyIcon.setAttribute('data-lucide', 'check');
+                copyText.textContent = 'Copied';
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    copyIcon.setAttribute('data-lucide', 'copy');
+                    copyText.textContent = 'Copy';
+                    lucide.createIcons();
+                }, 2000);
+            });
+        });
+
+        // --- Rate Increment/Decrement ---
+        const rateMinus = document.getElementById('rate-minus');
+        const ratePlus = document.getElementById('rate-plus');
+        const rateDisplay = document.getElementById('rate-display');
+        const rateProfileDisplay = document.getElementById('rate-display-profile');
+        
+        let currentRate = 4.00;
+
+        const updateRateDisplay = () => {
+            const formattedRate = `$${currentRate.toFixed(2)}`;
+            rateDisplay.textContent = formattedRate;
+            rateProfileDisplay.textContent = formattedRate;
+        };
+
+        rateMinus.addEventListener('click', () => {
+            if (currentRate > 1.00) {
+                currentRate -= 1.00;
+                updateRateDisplay();
+            }
+        });
+
+        ratePlus.addEventListener('click', () => {
+            if (currentRate < 20.00) {
+                currentRate += 1.00;
+                updateRateDisplay();
+            }
+        });
+
+        // --- History Tabs ---
+        const tabCalls = document.getElementById('tab-calls');
+        const tabPayouts = document.getElementById('tab-payouts');
+        const listCalls = document.getElementById('list-calls');
+        const listPayouts = document.getElementById('list-payouts');
+
+        function switchTab(activeTab, inactiveTab, activeList, inactiveList) {
+            activeTab.classList.add('text-gold', 'border-gold');
+            activeTab.classList.remove('text-secondary', 'border-transparent');
+            inactiveTab.classList.remove('text-gold', 'border-gold');
+            inactiveTab.classList.add('text-secondary', 'border-transparent');
+            
+            activeList.classList.remove('hidden');
+            inactiveList.classList.add('hidden');
+        }
+
+        tabCalls.addEventListener('click', () => switchTab(tabCalls, tabPayouts, listCalls, listPayouts));
+        tabPayouts.addEventListener('click', () => switchTab(tabPayouts, tabCalls, listPayouts, listCalls));
+
+        // --- Charts (Chart.js) ---
+        let barChart, pieChart;
+
+        function getChartColors() {
+            const isDark = html.classList.contains('dark');
+            return {
+                gold: '#D4AF37',
+                red: '#EF4444',
+                grey: isDark ? '#4A4A4A' : '#E5E7EB',
+                textColor: isDark ? '#9CA3AF' : '#6B7280',
+                gridColor: isDark ? '#2D2D2D' : '#F3F4F6'
+            };
+        }
+
+        function renderCharts() {
+            const colors = getChartColors();
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+
+            if (barChart) barChart.destroy();
+            if (pieChart) pieChart.destroy();
+
+            // Bar Chart
+            barChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Earnings ($)',
+                        data: [120, 150, 80, 200, 340, 450, 300],
+                        backgroundColor: colors.gold,
+                        borderRadius: 4,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            grid: { color: colors.gridColor, drawBorder: false },
+                            ticks: { color: colors.textColor, callback: (value) => `$${value}` }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: colors.textColor }
+                        }
+                    }
+                }
+            });
+
+            // Pie Chart
+            pieChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Answered', 'Declined', 'Missed'],
+                    datasets: [{
+                        data: [65, 20, 15],
+                        backgroundColor: [colors.gold, colors.grey, colors.red],
+                        borderColor: 'transparent',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Initial render
+        renderCharts();
+    </script>
+</body>
+</html>
